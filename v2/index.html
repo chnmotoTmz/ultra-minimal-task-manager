@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Ultra Minimal Task Manager v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr 280px;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas: 
+                "header header header"
+                "sidebar main stats";
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Header */
+        .header {
+            grid-area: header;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Sidebar - 今日のタスク */
+        .sidebar {
+            grid-area: sidebar;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Main - タスク詳細エリア */
+        .main {
+            grid-area: main;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        /* Stats - 実績・統計 */
+        .stats {
+            grid-area: stats;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Task Card */
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #e5e7eb;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .task-card.in-progress {
+            border-left-color: #f59e0b;
+            background: linear-gradient(90deg, #fef3c7 0%, white 20%);
+        }
+
+        .task-card.completed {
+            border-left-color: #10b981;
+            background: linear-gradient(90deg, #d1fae5 0%, white 20%);
+        }
+
+        .task-card.scheduled {
+            border-left-color: #6366f1;
+            background: linear-gradient(90deg, #e0e7ff 0%, white 20%);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+            line-height: 1.4;
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .task-id {
+            background: rgba(0, 0, 0, 0.05);
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .task-time {
+            font-weight: 500;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-complete {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-record {
+            background: #6366f1;
+            color: white;
+        }
+
+        /* Stats Cards */
+        .stats h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s;
+        }
+
+        /* Tomorrow Tasks */
+        .tomorrow-section {
+            margin-top: 32px;
+        }
+
+        .tomorrow-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Add Task Form */
+        .add-task-form {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .add-task-form h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .time-input {
+            width: 80px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "header"
+                    "main";
+            }
+            
+            .sidebar, .stats {
+                display: none;
+            }
+        }
+
+        /* Animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .task-card {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎯 Ultra Minimal Task Manager v2</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="loadRedmineData()">🔗 Redmine</button>
+                <button class="btn btn-secondary" onclick="exportData()">💾 保存</button>
+                <button class="btn btn-primary" onclick="showAddTaskForm()">+ タスク追加</button>
+            </div>
+        </header>
+
+        <!-- Sidebar - 今日のタスク -->
+        <aside class="sidebar">
+            <h2>🔥 今日やること</h2>
+            <div id="today-tasks">
+                <!-- 今日のタスクカードがここに表示される -->
+            </div>
+
+            <div class="tomorrow-section">
+                <h3>🌅 明日やること</h3>
+                <div id="tomorrow-tasks">
+                    <!-- 明日のタスクカードがここに表示される -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main - タスク詳細・追加エリア -->
+        <main class="main">
+            <div class="add-task-form">
+                <h3>📝 新しいタスクを追加</h3>
+                <div class="form-group">
+                    <label for="task-title">タスク名</label>
+                    <input type="text" id="task-title" class="form-input" placeholder="何をしますか？">
+                </div>
+                <div class="form-group">
+                    <label for="task-hours">予定時間 (時間)</label>
+                    <input type="number" id="task-hours" class="form-input time-input" step="0.5" placeholder="2.0">
+                </div>
+                <button class="btn btn-primary" onclick="addTask()">✅ タスクを追加</button>
+            </div>
+
+            <div id="task-detail">
+                <h3>👋 タスクを選択して詳細を表示</h3>
+                <p style="color: #6b7280; margin-top: 8px;">左のサイドバーからタスクをクリックしてください。</p>
+            </div>
+        </main>
+
+        <!-- Stats - 実績・統計 -->
+        <aside class="stats">
+            <h2>📊 今日の実績</h2>
+            
+            <div class="stat-card">
+                <div class="stat-label">予定時間</div>
+                <div class="stat-value" id="planned-hours">0h</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">実績時間</div>
+                <div class="stat-value" id="actual-hours">0h</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">完了率</div>
+                <div class="stat-value" id="completion-rate">0/0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">計画精度</div>
+                <div class="stat-value" id="accuracy">0%</div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // タスク管理システム v2
+        class TaskManagerV2 {
+            constructor() {
+                this.data = {
+                    last_updated: new Date().toISOString(),
+                    next_id: 1,
+                    tasks: []
+                };
+                this.selectedTask = null;
+                this.loadSampleData();
+                this.render();
+            }
+
+            loadSampleData() {
+                this.data = {
+                    last_updated: new Date().toISOString(),
+                    next_id: 6,
+                    tasks: [
+                        {
+                            id: 1,
+                            title: "Microsoft Translator APIキー取得・翻訳機能統合",
+                            planned_date: this.getTodayDate(),
+                            planned_hours: 2,
+                            actual_hours: 0,
+                            status: "in-progress"
+                        },
+                        {
+                            id: 2,
+                            title: "Claude PRO期限内コーディング集中プロジェクト",
+                            planned_date: this.getTodayDate(),
+                            planned_hours: 3,
+                            actual_hours: 0,
+                            status: "scheduled"
+                        },
+                        {
+                            id: 3,
+                            title: "NASブログホスト移行プロジェクト",
+                            planned_date: this.getTomorrowDate(),
+                            planned_hours: 3,
+                            actual_hours: 0,
+                            status: "scheduled"
+                        },
+                        {
+                            id: 4,
+                            title: "冷蔵庫管理・レシピ提案・買い出しアプリ開発",
+                            planned_date: this.getTomorrowDate(),
+                            planned_hours: 4,
+                            actual_hours: 0,
+                            status: "scheduled"
+                        },
+                        {
+                            id: 5,
+                            title: "デジタルコンテンツ・ビジネス再開プロジェクト",
+                            planned_date: this.getTomorrowDate(),
+                            planned_hours: 3,
+                            actual_hours: 0,
+                            status: "scheduled"
+                        }
+                    ]
+                };
+            }
+
+            getTodayDate() {
+                return new Date().toISOString().split('T')[0];
+            }
+
+            getTomorrowDate() {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                return tomorrow.toISOString().split('T')[0];
+            }
+
+            getTodayTasks() {
+                const today = this.getTodayDate();
+                return this.data.tasks.filter(t => t.planned_date === today);
+            }
+
+            getTomorrowTasks() {
+                const tomorrow = this.getTomorrowDate();
+                return this.data.tasks.filter(t => t.planned_date === tomorrow);
+            }
+
+            addTask() {
+                const title = document.getElementById('task-title').value.trim();
+                const hours = parseFloat(document.getElementById('task-hours').value);
+                
+                if (title && hours > 0) {
+                    const task = {
+                        id: this.data.next_id++,
+                        title: title,
+                        planned_date: this.getTomorrowDate(),
+                        planned_hours: hours,
+                        actual_hours: 0,
+                        status: "scheduled"
+                    };
+                    this.data.tasks.push(task);
+                    
+                    document.getElementById('task-title').value = '';
+                    document.getElementById('task-hours').value = '';
+                    
+                    this.render();
+                    this.showNotification('タスクを追加しました！');
+                } else {
+                    alert('タスク名と予定時間を正しく入力してください');
+                }
+            }
+
+            startTask(taskId) {
+                const task = this.data.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.status = "in-progress";
+                    this.render();
+                    this.showNotification(`「${task.title}」を開始しました`);
+                }
+            }
+
+            recordTime(taskId) {
+                const hours = prompt('実績時間を入力してください（例: 1.5）:');
+                if (hours && !isNaN(parseFloat(hours))) {
+                    const task = this.data.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.actual_hours = parseFloat(hours);
+                        task.status = "completed";
+                        this.render();
+                        this.showNotification(`「${task.title}」の実績を記録しました`);
+                    }
+                }
+            }
+
+            selectTask(taskId) {
+                this.selectedTask = this.data.tasks.find(t => t.id === taskId);
+                this.renderTaskDetail();
+            }
+
+            renderTaskCard(task) {
+                const statusIcons = {
+                    'scheduled': '📋',
+                    'in-progress': '🔄',
+                    'completed': '✅'
+                };
+
+                const statusTexts = {
+                    'scheduled': '予定',
+                    'in-progress': '実行中',
+                    'completed': '完了'
+                };
+
+                const actionButtons = task.status === 'scheduled' 
+                    ? `<button class="btn-small btn-start" onclick="taskManager.startTask(${task.id})">▶️ 開始</button>`
+                    : task.status === 'in-progress'
+                    ? `<button class="btn-small btn-record" onclick="taskManager.recordTime(${task.id})">⏱️ 実績記録</button>`
+                    : '';
+
+                return `
+                    <div class="task-card ${task.status}" onclick="taskManager.selectTask(${task.id})">
+                        <div class="task-header">
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-id">ID: ${task.id}</div>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-time">${task.planned_hours}h 予定 → ${task.actual_hours}h 実績</span>
+                            <span>${statusIcons[task.status]} ${statusTexts[task.status]}</span>
+                        </div>
+                        <div class="task-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderTaskDetail() {
+                const detailEl = document.getElementById('task-detail');
+                if (!this.selectedTask) {
+                    detailEl.innerHTML = `
+                        <h3>👋 タスクを選択して詳細を表示</h3>
+                        <p style="color: #6b7280; margin-top: 8px;">左のサイドバーからタスクをクリックしてください。</p>
+                    `;
+                    return;
+                }
+
+                const task = this.selectedTask;
+                const variance = task.actual_hours - task.planned_hours;
+                const varianceColor = variance > 0 ? '#ef4444' : variance < 0 ? '#10b981' : '#6b7280';
+
+                detailEl.innerHTML = `
+                    <h3>📋 ${task.title}</h3>
+                    <div style="margin: 20px 0;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
+                            <div class="stat-card">
+                                <div class="stat-label">予定時間</div>
+                                <div class="stat-value">${task.planned_hours}h</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">実績時間</div>
+                                <div class="stat-value">${task.actual_hours}h</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">差異</div>
+                                <div class="stat-value" style="color: ${varianceColor}">
+                                    ${variance > 0 ? '+' : ''}${variance.toFixed(1)}h
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="taskManager.recordTime(${task.id})" style="margin-right: 12px;">
+                            ⏱️ 実績時間を記録
+                        </button>
+                        <button class="btn btn-secondary" onclick="taskManager.startTask(${task.id})">
+                            ▶️ タスクを開始
+                        </button>
+                    </div>
+                `;
+            }
+
+            render() {
+                this.renderTodayTasks();
+                this.renderTomorrowTasks();
+                this.renderStats();
+                this.renderTaskDetail();
+            }
+
+            renderTodayTasks() {
+                const todayTasks = this.getTodayTasks();
+                const container = document.getElementById('today-tasks');
+                
+                if (todayTasks.length === 0) {
+                    container.innerHTML = '<p style="color: #6b7280; font-style: italic;">今日のタスクはありません</p>';
+                } else {
+                    container.innerHTML = todayTasks.map(task => this.renderTaskCard(task)).join('');
+                }
+            }
+
+            renderTomorrowTasks() {
+                const tomorrowTasks = this.getTomorrowTasks();
+                const container = document.getElementById('tomorrow-tasks');
+                
+                if (tomorrowTasks.length === 0) {
+                    container.innerHTML = '<p style="color: #6b7280; font-style: italic;">明日のタスクはありません</p>';
+                } else {
+                    container.innerHTML = tomorrowTasks.map(task => this.renderTaskCard(task)).join('');
+                }
+            }
+
+            renderStats() {
+                const todayTasks = this.getTodayTasks();
+                const planned = todayTasks.reduce((sum, t) => sum + t.planned_hours, 0);
+                const actual = todayTasks.reduce((sum, t) => sum + t.actual_hours, 0);
+                const completed = todayTasks.filter(t => t.status === 'completed').length;
+                const accuracy = planned > 0 ? ((actual / planned) * 100).toFixed(1) : 0;
+                const progress = planned > 0 ? Math.min((actual / planned) * 100, 100) : 0;
+
+                document.getElementById('planned-hours').textContent = `${planned}h`;
+                document.getElementById('actual-hours').textContent = `${actual}h`;
+                document.getElementById('completion-rate').textContent = `${completed}/${todayTasks.length}`;
+                document.getElementById('accuracy').textContent = `${accuracy}%`;
+                document.getElementById('progress-fill').style.width = `${progress}%`;
+            }
+
+            showNotification(message) {
+                // 簡単な通知表示
+                alert(message);
+            }
+
+            exportData() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'tasks-v2.json';
+                a.click();
+                
+                URL.revokeObjectURL(url);
+                this.showNotification('データを保存しました！');
+            }
+        }
+
+        // グローバル関数
+        let taskManager;
+
+        function loadRedmineData() {
+            // Redmine連携機能（後で実装）
+            alert('Redmine連携機能は準備中です');
+        }
+
+        function exportData() {
+            taskManager.exportData();
+        }
+
+        function showAddTaskForm() {
+            document.getElementById('task-title').focus();
+        }
+
+        function addTask() {
+            taskManager.addTask();
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            taskManager = new TaskManagerV2();
+        });
+    </script>
+</body>
+</html>
