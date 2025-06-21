@@ -1,0 +1,30 @@
+{
+  "last_updated": "2025-06-21T04:30:00Z",
+  "next_id": 4,
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Azure Translator設定",
+      "planned_date": "2025-06-22",
+      "planned_hours": 2,
+      "actual_hours": 0,
+      "status": "予定"
+    },
+    {
+      "id": 2,
+      "title": "API統合コード作成",
+      "planned_date": "2025-06-22",
+      "planned_hours": 3,
+      "actual_hours": 0,
+      "status": "予定"
+    },
+    {
+      "id": 3,
+      "title": "RedmineAPI調査",
+      "planned_date": "2025-06-21",
+      "planned_hours": 2,
+      "actual_hours": 2.5,
+      "status": "完了"
+    }
+  ]
+}
